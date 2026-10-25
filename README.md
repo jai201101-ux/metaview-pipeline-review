@@ -13,7 +13,7 @@ Outputs in `out/`:
 - `stalled_deals.csv`: open deals carrying a flag, ranked by weighted value
 
 Cleaning rules: one row per deal (the export has one row per product line); won and lost
-month from the stage entered date; the 13 May bulk close-out (1,107 deals, reason Unknown,
+month from the stage entered date; the 13 May bulk close-out (1,330 deals, 83% reason Unknown,
 no activity found) kept but flagged and excluded from rates; deals with no amount kept for
 counts only; created dates not used because every deal carries an April or May 2026 date.
 
