@@ -1,10 +1,4 @@
-# Julius, corrected prompt
-
-Paste this with the same workbook attached. Three things changed from the July prompt: deals are
-counted once, the chart labels are built from the right columns, and every number on the page is
-computed, not typed in.
-
----
+# Julius, prompt
 
 Analyse the attached Salesforce workbook. Reporting period: May 2026, compared with April 2026. AE target treatment: full monthly target (ENT $125,000, MM and SMB $100,000).
 
