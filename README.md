@@ -1,66 +1,33 @@
-# Fixing the Hex workbook (free plan, in the browser, about 20 minutes)
+# Metaview pipeline review, May 2026
 
-Two pastes and a handful of expected-value edits. Nothing else changes.
+One script rebuilds the monthly business review from the Salesforce export.
 
-## 1. Replace the "Prepare graph data" cell
+    python3 analysis.py      # cleans the export, writes out/metrics.json and the CSVs
+    node deck.js             # builds out/Metaview_MBR_May_2026.pptx from metrics.json
 
-Open the cell titled "Prepare graph data". Select all its code and replace it with the contents of
-`cell_A_prepare_deal_data.py`. Run it.
+Outputs in `out/`:
+- `Metaview_MBR_May_2026.pptx` and `.pdf`: the review, 13 pages
+- `deals_clean.csv`: one row per deal, with status, value in USD, won or lost month, flags
+- `removed_and_why.csv`: every cleaning rule and how many deals it touched
+- `priority_deals.csv`: open deals closing May or June, ranked by weighted value, with risk flags
+- `stalled_deals.csv`: open deals carrying a flag, ranked by weighted value
 
-Expected output (the preparation check table):
+Cleaning rules: one row per deal (the export has one row per product line); won and lost
+month from the stage entered date; the 13 May bulk close-out (1,107 deals, reason Unknown,
+no activity found) kept but flagged and excluded from rates; deals with no amount kept for
+counts only; created dates not used because every deal carries an April or May 2026 date.
 
-| Check | Result |
-|---|---|
-| Source rows (product lines) | 15510 |
-| Deals (one row each) | 15056 |
-| Lines collapsed | 454 |
-| Deals with no amount | 1224 |
-| Bulk close-out flagged | 1330 |
+## Added 25 Oct
 
-## 2. Re-run "Calculate reporting period and KPIs"
+- `calibrate.py`: calibrated deal ranking, ported from the July Hex workbook with two fixes (one row per deal; probability read as it stood at the snapshot). Writes `out/calibrated_deals.csv`, `out/vp_queue.csv` and a `calibration` block in `metrics.json`. Argument: training window in days before the cutoff (default 90; 0 = all history).
+- `build_page.py`: the one-page HTML review from `metrics.json`, same numbers as the deck.
+- `HEX_FIX_GUIDE.md`, `cell_A_prepare_deal_data.py`, `cell_B_snapshot_probability.py`: the guide and two paste-in cells to correct the July Hex workbook.
+- `julius_prompt.md`: the corrected Julius prompt with sanity values.
 
-No edit needed. With Review date 2026-05-31 and Previous complete month, the KPI table should now read:
+Run order: `analysis.py`, `calibrate.py`, `node deck.js`, `build_page.py`.
 
-| Metric | Value |
-|---|---|
-| Won count | 136 |
-| Won value | 1,110,259 |
-| Average won deal | 8,164 |
-| Lost count | 1,678 (of which 1,330 are the 13 May bulk close-out) |
-| Win rate | 7.5% raw, 28.1% excluding the bulk close-out |
-| Open pipeline count | 926 |
-| Open pipeline value | 18,740,429 |
-| Weighted open pipeline | 6,602,438 |
+## Data
 
-If you see 231 and 3,245,789 the old cell is still running. Check step 1 saved.
-
-## 3. Add the snapshot probability cell
-
-In Stage 1, find the cell that builds `pa_base_df["pa_snapshot_stage"]` (it starts with
-`pa_stage_date_map = {`). Add a new Python cell directly below it and paste
-`cell_B_snapshot_probability.py`. Run it.
-
-Expected: roughly 1,100 deals open at snapshot, around 850 still in the same stage, around 250 moved or closed since.
-
-## 4. Flip the checks that were written to enforce the old rule
-
-These checks were written in July to confirm that NO deduplication happened. They will now show
-Fail. Each is one line. Change the expected text and the pass condition, or simply delete the line.
-
-- Readiness check cell: `"No Opportunity ID deduplication occurred"` and `"deal_df row count matches raw_df"`.
-  Replace the `raw_df["Opportunity ID"]...equals(...)` comparison with `deal_df["Opportunity ID"].is_unique`.
-- Stage 1 validation cell: checks 1, 2, 3, 24, 28 (they compare `pa_source_row_count` to `len(deal_df)`, which is now 15,056, so 1 and 2 still pass; 3, 24 and 28 need `pa_original_repeated_additional` set to 0).
-  Simplest: at the top of that cell add `pa_original_repeated_additional = 0` after it is first computed.
-- Stage 2 validation cell: checks 3, 20, 25. Same fix: after `pa_forecast_repeated_additional` is computed add `pa_forecast_repeated_additional = 0`.
-- Release 1 cell: `("Raw source rows remain 15,510", ...)` still passes because `raw_df` is untouched. `("No raw rows were deleted", len(raw_df), len(deal_df), ...)` will fail; change the third argument to `len(raw_df)`.
-
-## 5. What the Stage 2 queue should look like afterwards
-
-The top ten by management attention will contain ten different deals (no owner repeated four times for one deal). The "Salesforce assigns 0%" entries disappear. The growth target reads about 1,332,000 (May won 1,110,259 x 1.2), not 3,894,947.
-
-## 6. Known limitation, worth saying out loud
-
-The calibration trains on 2025 history where deals won 58% of the time. In 2026 the win rate is
-in the twenties. So the calibrated probabilities run high. The Python version in the repo adds a
-90-day training window for that reason. The workbook's own check 32 ("historical calibration may
-not represent current market conditions") was right.
+The Salesforce export and every output file are confidential and are not in this repository.
+To run it, put your own export at `data/deals.xlsx` and run the four scripts in the order above.
+Outputs are written to `out/`.
