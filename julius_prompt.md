@@ -1,10 +1,16 @@
-# Julius, prompt
+# Julius, corrected prompt
+
+Paste this with the same workbook attached. Four things changed from the July prompt: deals are
+counted once, clean-up days are detected by pattern rather than by date, the chart labels are built
+from the right columns, and every number on the page is computed, not typed in.
+
+---
 
 Analyse the attached Salesforce workbook. Reporting period: May 2026, compared with April 2026. AE target treatment: full monthly target (ENT $125,000, MM and SMB $100,000).
 
 Counting rule, which overrides everything else: the export has one row per product line, and the deal's Amount is repeated on every line. Count each Opportunity ID once. Deal value in USD is the sum of "Total Price (converted)" across the deal's lines. Use the product lines only for the product chart. Confirm at the start: 15,510 source rows, 15,056 deals, 454 lines collapsed.
 
-Won month is the Stage 7W Entered Date, lost month is the Stage 7L Entered Date. Treat the 1,330 deals closed lost on 13 May 2026 as a bulk hygiene close-out: keep them, show them as a separate grey bar, and exclude them from every win rate.
+Won month is the Stage 7W Entered Date, lost month is the Stage 7L Entered Date. Bulk close-outs: find every single day on which at least 50 deals were closed lost and three quarters or more carry reason "Unknown" (on this file: 3 March, 12 May and 13 May 2026, 1,584 deals). Keep them, show them as a separate grey series, and exclude them from every win rate.
 
 Produce these ten outputs, one chart each, dark theme (background #0B0F14, text #F3F4F6, cyan #22D3EE, green #22C55E, red #F87171, grey #6B7280):
 1. Period scorecard: won count, won value, average won deal, real lost count and value, bulk close-out count, win rate excluding the bulk close-out, open pipeline count, value and weighted value.

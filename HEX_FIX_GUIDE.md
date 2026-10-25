@@ -15,7 +15,8 @@ Expected output (the preparation check table):
 | Deals (one row each) | 15056 |
 | Lines collapsed | 454 |
 | Deals with no amount | 1224 |
-| Bulk close-out flagged | 1330 |
+| Bulk close-out flagged | 1584 |
+| Bulk close-out days | 2026-03-03, 2026-05-12, 2026-05-13 |
 
 ## 2. Re-run "Calculate reporting period and KPIs"
 
@@ -26,8 +27,9 @@ No edit needed. With Review date 2026-05-31 and Previous complete month, the KPI
 | Won count | 136 |
 | Won value | 1,110,259 |
 | Average won deal | 8,164 |
-| Lost count | 1,678 (of which 1,330 are the 13 May bulk close-out) |
-| Win rate | 7.5% raw, 28.1% excluding the bulk close-out |
+| Lost count (all) | 1,678, of which 1,460 are bulk close-out |
+| Real lost count | 218 |
+| Win rate (excluding bulk close-out) | 38.4% |
 | Open pipeline count | 926 |
 | Open pipeline value | 18,740,429 |
 | Weighted open pipeline | 6,602,438 |
@@ -40,7 +42,7 @@ In Stage 1, find the cell that builds `pa_base_df["pa_snapshot_stage"]` (it star
 `pa_stage_date_map = {`). Add a new Python cell directly below it and paste
 `cell_B_snapshot_probability.py`. Run it.
 
-Expected: roughly 1,100 deals open at snapshot, around 850 still in the same stage, around 250 moved or closed since.
+Expected: 1,126 deals open at snapshot, 780 still in the same stage, 346 moved or closed since.
 
 ## 4. Flip the checks that were written to enforce the old rule
 
@@ -64,3 +66,20 @@ The calibration trains on 2025 history where deals won 58% of the time. In 2026 
 in the twenties. So the calibrated probabilities run high. The Python version in the repo adds a
 90-day training window for that reason. The workbook's own check 32 ("historical calibration may
 not represent current market conditions") was right.
+
+## 7. The backtest cell
+
+Replace the whole "Build Historical Probability Back-Test" cell with `cell_C_backtest.py`. Three fixes:
+products read from the per-deal column, each deal's earliest recorded date stands in for the
+migration-date Created Date (so the test population is no longer empty), and the Salesforce
+benchmark is the stage probability on the prediction date rather than today's value (which is
+100% or 0% for a deal that has since resolved and made Salesforce look perfect).
+
+Expected: 273 test deals, actual win rate 32%, model average 75% (Brier 0.380), Salesforce stage
+benchmark 56% (Brier 0.276). Conclusion: the history-based model is worse than Salesforce on this
+test. That is the honest result and the reason the Python version trains on a 90-day window.
+
+## Note on the generic rules
+
+The bulk close-out rule and the stage probabilities are now read from the data, not typed in, so
+the workbook runs on any month's export without edits.

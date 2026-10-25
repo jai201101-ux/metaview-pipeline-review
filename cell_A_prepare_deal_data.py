@@ -37,7 +37,8 @@ deal_df = (
             "Product: Month", "Product Description", "List Price", "List Price (converted)", "Product Code", "Active Product")},
         **{"Deal Value USD": ("Line Value USD", "sum"),
            "Product Lines": ("Line Value USD", "size"),
-           "Product Names": ("Product Name", lambda s: ", ".join(sorted(set(s.dropna()))))},
+           "Product Names": ("Product Name", lambda s: ", ".join(sorted(set(s.dropna())))),
+           "Product Name": ("Product Name", first)},   # main product line, used as a calibration dimension
     )
     .reset_index()
 )
@@ -65,13 +66,19 @@ deal_df["Is Won"] = deal_df["Stage"].eq("7W - Closed Won")
 deal_df["Is Lost"] = deal_df["Stage"].isin(["7L - Closed Lost", "Closed Lost"])
 deal_df["Is Open"] = ~(deal_df["Is Won"] | deal_df["Is Lost"])
 
-# The 13 May bulk close-out: 1,330 deals closed lost on one day, 83% reason Unknown.
-# Flagged so rates can exclude it. Not removed.
-deal_df["Bulk Close 13 May"] = deal_df["Is Lost"] & deal_df["Lost Date"].eq(pd.Timestamp("2026-05-13"))
+# Bulk close-outs: any single day on which at least 50 deals were closed lost and three quarters
+# or more carry reason "Unknown". That is what a pipeline clean-up looks like on any export.
+# Flagged so rates can exclude them. Not removed. (On this export: 3 Mar, 12 May and 13 May 2026.)
+_lost_by_day = deal_df.loc[deal_df["Is Lost"] & deal_df["Lost Date"].notna()].groupby("Lost Date").agg(
+    n=("Opportunity ID", "size"), unknown_share=("Closed Lost Reason", lambda s: s.eq("Unknown").mean())
+)
+bulk_close_days = _lost_by_day.index[(_lost_by_day["n"] >= 50) & (_lost_by_day["unknown_share"] >= 0.75)]
+deal_df["Bulk Close Out"] = deal_df["Is Lost"] & deal_df["Lost Date"].isin(bulk_close_days)
+deal_df["Bulk Close 13 May"] = deal_df["Bulk Close Out"]   # old name kept for any cell that still uses it
 
 preparation_check = pd.DataFrame({
-    "Check": ["Source rows (product lines)", "Deals (one row each)", "Lines collapsed", "Deals with no amount", "Bulk close-out flagged"],
-    "Result": [len(raw_df), len(deal_df), len(raw_df) - len(deal_df), int(deal_df["Deal Value USD"].isna().sum()), int(deal_df["Bulk Close 13 May"].sum())],
+    "Check": ["Source rows (product lines)", "Deals (one row each)", "Lines collapsed", "Deals with no amount", "Bulk close-out flagged", "Bulk close-out days"],
+    "Result": [len(raw_df), len(deal_df), len(raw_df) - len(deal_df), int(deal_df["Deal Value USD"].isna().sum()), int(deal_df["Bulk Close Out"].sum()), ", ".join(str(x.date()) for x in bulk_close_days)],
 })
 display(preparation_check)
 display(deal_df[["Deal Row ID", "Opportunity ID", "Opportunity Owner", "Owner Role", "Amount USD", "Product Lines", "Stage", "Region", "Segment", "Weighted Pipeline USD"]].head(10))

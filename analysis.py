@@ -58,14 +58,16 @@ deals["stage_entered"] = stage_dates.max(axis=1)
 deals["days_in_stage"] = (pd.Timestamp("2026-05-31") - deals.stage_entered).dt.days.clip(lower=0)
 
 # ---------- 3. bulk hygiene close ----------
-bulk = (deals.status == "lost") & (deals.lost_date == "2026-05-13")
+_lost_by_day = deals[(deals.status == "lost") & deals.lost_date.notna()].groupby("lost_date").agg(n=("Opportunity ID", "size"), unk=("lost_reason", lambda s: s.eq("Unknown").mean()))
+BULK_DAYS = _lost_by_day.index[(_lost_by_day.n >= 50) & (_lost_by_day.unk >= 0.75)]
+bulk = (deals.status == "lost") & deals.lost_date.isin(BULK_DAYS)
 deals["bulk_close"] = bulk
 
 # ---------- removed and why ----------
 rows = []
 dup = raw["Opportunity ID"].duplicated().sum()
 rows.append(["Duplicate product lines collapsed", dup, "One row per deal; product lines kept for the product chart only"])
-rows.append(["Bulk hygiene close flagged", int(bulk.sum()), "All deals closed lost on 13 May 2026 (83% reason Unknown, no activity found). Shown separately, excluded from win-rate trend"])
+rows.append(["Bulk hygiene close flagged", int(bulk.sum()), "Any day with 50 or more deals closed lost and 75% or more reason Unknown: " + ", ".join(str(x.date()) for x in BULK_DAYS) + ". Shown separately, excluded from win-rate trend"])
 rows.append(["Deals with no amount", int(deals.value_usd.isna().sum()), "Kept for counts, excluded from value sums"])
 rows.append(["Open deals with close date in the past", int(((deals.status == "open") & (deals.close_date < "2026-06-01")).sum()), "Flagged at risk, left in pipeline"])
 rows.append(["Won deals missing a won date", int(((deals.status == "won") & raw.groupby("Opportunity ID")["Stage 7W Entered Date"].first().isna().reindex(deals["Opportunity ID"]).values).sum()), "Close Date used instead"])
@@ -182,7 +184,7 @@ M["lost_trend"] = {k: [int(jan.get(k, 0)), int(cur_lost.lost_reason.eq(k).sum())
 # lost reasons (real losses, this month)
 lr = cur_lost.lost_reason.fillna("Not recorded").value_counts().head(6)
 M["lost_reasons"] = [dict(reason=k, n=int(v)) for k, v in lr.items()]
-M["bulk_detail"] = dict(n=int(bulk.sum()), smb=int((deals[bulk].segment == "SMB").sum()), created_apr=int((deals[bulk].created.dt.month == 4).sum()),
+M["bulk_detail"] = dict(n=int(bulk.sum()), days=[str(x.date()) for x in BULK_DAYS], may_n=int((bulk & (deals.lost_m == PERIOD)).sum()), smb=int((deals[bulk].segment == "SMB").sum()), created_apr=int((deals[bulk].created.dt.month == 4).sum()),
                         detail=str(deals[bulk].lost_detail.mode().iloc[0])[:160])
 M["meta"] = dict(rows=len(raw), deals=len(deals), dup_lines=int(dup), period="May 2026", prev="April 2026", next="June 2026")
 json.dump(M, open(OUT / "metrics.json", "w"), indent=1, default=str)

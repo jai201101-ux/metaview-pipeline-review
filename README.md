@@ -13,7 +13,7 @@ Outputs in `out/`:
 - `stalled_deals.csv`: open deals carrying a flag, ranked by weighted value
 
 Cleaning rules: one row per deal (the export has one row per product line); won and lost
-month from the stage entered date; the 13 May bulk close-out (1,330 deals, 83% reason Unknown,
+month from the stage entered date; the 13 May bulk close-out (1,107 deals, reason Unknown,
 no activity found) kept but flagged and excluded from rates; deals with no amount kept for
 counts only; created dates not used because every deal carries an April or May 2026 date.
 
@@ -21,7 +21,7 @@ counts only; created dates not used because every deal carries an April or May 2
 
 - `calibrate.py`: calibrated deal ranking, ported from the July Hex workbook with two fixes (one row per deal; probability read as it stood at the snapshot). Writes `out/calibrated_deals.csv`, `out/vp_queue.csv` and a `calibration` block in `metrics.json`. Argument: training window in days before the cutoff (default 90; 0 = all history).
 - `build_page.py`: the one-page HTML review from `metrics.json`, same numbers as the deck.
-- `HEX_FIX_GUIDE.md`, `cell_A_prepare_deal_data.py`, `cell_B_snapshot_probability.py`: the guide and two paste-in cells to correct the July Hex workbook.
+- `HEX_FIX_GUIDE.md`, `cell_A_prepare_deal_data.py`, `cell_B_snapshot_probability.py`, `cell_C_backtest.py`: the guide and three paste-in cells to correct the July Hex workbook.
 - `julius_prompt.md`: the corrected Julius prompt with sanity values.
 
 Run order: `analysis.py`, `calibrate.py`, `node deck.js`, `build_page.py`.
@@ -31,3 +31,14 @@ Run order: `analysis.py`, `calibrate.py`, `node deck.js`, `build_page.py`.
 The Salesforce export and every output file are confidential and are not in this repository.
 To run it, put your own export at `data/deals.xlsx` and run the four scripts in the order above.
 Outputs are written to `out/`.
+
+## Weekly check-in agent (ElevenLabs + n8n)
+
+Reps phone a voice agent for three minutes before the weekly pipeline review. It knows their numbers, this month's target and their deals in the top 20 attention ranking, asks what changed, their number for the month, next steps on flagged deals, Salesforce fixes and what help they need. Each call becomes one row in the VP's prep sheet.
+
+- `n8n_engine.js`: runs inside an n8n Code node. Reads the raw export, rebuilds every rep brief and the top 20 (same ranking as the Hex workbook, checked deal for deal), and writes the agent prompt. All periods are read from the data.
+- `n8n_build_workflows.js`: builds the two n8n workflows. Workflow 1: upload the export, the agent is rebuilt. Workflow 2: the VP clicks once and downloads the prep sheet from the check-in calls.
+- `agent_prompt.md`: the three-minute call script. Built from the reviews: 41% of meeting time went on reps reading status aloud, 10% on fixing Salesforce live.
+- `setup_agent.py`, `build_briefs.py`, `vp_sheet.py`: the Python versions of the same steps.
+
+Call notes from the review transcripts and all Salesforce data stay out of this repository.

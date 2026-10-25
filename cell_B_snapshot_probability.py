@@ -10,7 +10,14 @@
 import numpy as np
 import pandas as pd
 
-pa_stage_standard_probability = {"1": 0.10, "2": 0.20, "3": 0.30, "4": 0.50, "5": 0.75, "6": 0.90}
+# Standard probability per stage, read from the data: the most common stored probability among
+# deals currently open in that stage. On this export: 10%, 20%, 30%, 50%, 75%, 90%.
+_open_now = pa_base_df.loc[pa_base_df["Stage"].astype(str).str.match(r"^[1-6]")]
+pa_stage_standard_probability = (
+    _open_now.assign(_code=_open_now["Stage"].astype(str).str.extract(r"^(\d)", expand=False))
+    .groupby("_code")["Probability Decimal"].agg(lambda s: pd.to_numeric(s, errors="coerce").mode().iloc[0])
+    .to_dict()
+)
 pa_current_stage_code = pa_base_df["Stage"].astype(str).str.extract(r"^(\d)", expand=False)
 pa_open_at_snapshot = pa_base_df["pa_snapshot_status"].eq("Open")
 pa_same_stage_now = pa_current_stage_code.eq(pa_base_df["pa_snapshot_stage_number"].astype(str))

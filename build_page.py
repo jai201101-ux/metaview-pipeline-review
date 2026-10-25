@@ -88,24 +88,24 @@ def table(headers, rows, cls=""):
 
 parts = []
 parts.append(f'''<header><p class="eyebrow">Metaview · Monthly Business Review · May 2026</p>
-<h1>May in one line: fewer, bigger deals, and a win rate a third of January's</h1>
+<h1>May in one line: fewer, bigger deals, and a win rate half of January's</h1>
 <p class="lede">Pre-read for the June MBR. Built from the Salesforce export, Jan 2025 to May 2026, counted one row per deal. Prepared by Jai Singhal.</p></header>''')
 parts.append('<div class="stats">' + stat("Won in May", usd(sc["won_v"]), f'{sc["won_n"]} deals, {pct(g["change"])} vs April') + stat("Win rate", f'{round(sc["win_rate"]*100)}%', f'{round(t[7]["win_rate"]*100)}% in January', "bad") + stat("Average won deal", usd(sc["avg_won"]), f'{usd(sc["prev_won_v"]/sc["prev_won_n"])} in April', "good") + stat("June coverage", f'{g["cov_w"]:.1f}x weighted', f'{usd(g["next_w"])} against {usd(g["need_next"])} needed', "good") + '</div>')
 parts.append(card("What May says", f'''<ul class="bul">
 <li><b>Growth.</b> May won {usd(sc["won_v"])}, down {round(-g["change"]*100)}% on April. The 20% growth target was {usd(g["target_this"])}. Missed.</li>
-<li><b>Conversion.</b> The win rate has fallen from {round(t[7]["win_rate"]*100)}% in January to {round(sc["win_rate"]*100)}% in May, in every segment. Real lost deals, not the data clean-up.</li>
+<li><b>Conversion.</b> The win rate fell from {round(t[7]["win_rate"]*100)}% in January to {round(t[10]["win_rate"]*100)}% in April, in every segment, and recovered only to {round(sc["win_rate"]*100)}% in May. Real lost deals, not the data clean-up.</li>
 <li><b>Mix.</b> Deals are bigger. Mid-market and enterprise grew, SMB fell {round(-seg["SMB"]["change"]*100)}% with a {round(seg["SMB"]["win_rate"]*100)}% win rate.</li>
 <li><b>June.</b> {usd(g["next_w"])} of weighted pipeline closes in June against {usd(g["need_next"])} needed for 20% growth. Coverage is fine. Conversion is the risk.</li></ul>''',
 "A one-prompt analysis of the same file counted product lines as deals and reported May won at $3.25M, up 29%. The next section explains."))
 parts.append(card("Before the numbers: three things in the export that change the story", f'''<div class="fixes">
 <div><span class="n">1</span><h3>One row per product, not per deal</h3><p>{M["meta"]["rows"]:,} rows are {M["meta"]["deals"]:,} deals. A deal with four products appears four times with the full amount on each row. Counting rows gives May won of $3.25M. Counting deals gives {usd(sc["won_v"])}. The first analysis said growth was up 29%. It is down {round(-g["change"]*100)}%.</p></div>
-<div><span class="n">2</span><h3>A bulk close-out on 13 May</h3><p>{M["bulk_detail"]["n"]:,} deals were closed lost on one day, 83% with reason Unknown and the note "no email or call activity found". {M["bulk_detail"]["smb"]:,} are SMB. This is pipeline hygiene, not May performance. Kept, flagged, shown separately. Without it May still has {sc["lost_n"]} real losses.</p></div>
+<div><span class="n">2</span><h3>Three bulk close-out days</h3><p>{M["bulk_detail"]["n"]:,} deals were closed lost on three days (3 March, 12 and 13 May), {M["bulk_detail"]["may_n"]:,} of them in May, most with reason Unknown and the note "no email or call activity found". {M["bulk_detail"]["smb"]:,} are SMB. This is pipeline hygiene, not May performance. Kept, flagged, shown separately. Without it May still has {sc["lost_n"]} real losses.</p></div>
 <div><span class="n">3</span><h3>Created dates are a migration date</h3><p>Every deal, including ones closed in 2025, has a created date in April or May 2026. The pipeline was loaded into Salesforce then. Deal age uses stage entered dates instead; 1,134 of 1,137 open deals have one.</p></div></div>'''))
 labels = [mlabel(x["month"]) for x in t]
-parts.append(card("Won value has plateaued since February while real losses have kept rising",
-    grouped_bars(labels, [("Won", [x["won_v"]/1e3 for x in t]), ("Lost", [x["lost_v"]/1e3 for x in t]), ("Bulk close-out, 13 May", [x["bulk_v"]/1e3 for x in t])], [C["a"], C["b"], C["g"]]),
+parts.append(card("Won value has plateaued since February while real losses rose through April",
+    grouped_bars(labels, [("Won", [x["won_v"]/1e3 for x in t]), ("Lost", [x["lost_v"]/1e3 for x in t]), ("Bulk close-outs", [x["bulk_v"]/1e3 for x in t])], [C["a"], C["b"], C["g"]]),
     f'USD thousands. Won value {usd(t[8]["won_v"])} in Feb, {usd(t[9]["won_v"])}, {usd(t[10]["won_v"])}, {usd(sc["won_v"])} in May. Won count {t[8]["won_n"]} in Feb to {sc["won_n"]} in May. Real losses {t[8]["lost_n"]} to {sc["lost_n"]}. Losses before the April migration may be under-recorded, which would flatter early-2026 rates; the direction since February is not in doubt.'))
-parts.append(card("The win rate has fallen in every segment since January, with no recovery in May",
+parts.append(card("The win rate fell in every segment to April, with a partial recovery in May",
     lines(["Jan", "Feb", "Mar", "Apr", "May"], [(k, [None if v is None else v*100 for v in wr[k]]) for k in ["ENT", "MM", "SMB"]], [C["d"], C["a"], C["b"]]) +
     f'<p class="inline">Why deals are lost in May, real losses: ' + ", ".join(f'{esc(r["reason"])} {r["n"]}' for r in M["lost_reasons"]) + f'. "Not a priority" went from {lt["Not a priority"][0]} in January to {lt["Not a priority"][1]} in May, "Unresponsive" from {lt["Unresponsive"][0]} to {lt["Unresponsive"][1]}. A qualification and follow-up problem, not a pricing one.</p>',
     "Win rate = won / (won + lost) by month closed, AE roles, bulk close-out excluded."))
@@ -142,7 +142,7 @@ parts.append(card("Method and data quality", f'''<ul class="bul small">
 <li>Source: Salesforce export, {M["meta"]["rows"]:,} rows, {M["meta"]["deals"]:,} deals, Jan 2025 to May 2026. Reporting period May 2026, compared with April.</li>
 <li>Deal value: sum of Total Price (converted) across a deal's product lines, in USD. Equals Amount for USD deals and converts the 46 EUR and GBP deals.</li>
 <li>Won and lost month: Stage 7W or 7L entered date, Close Date where missing (4 deals).</li>
-<li>Bulk close-out: {sc["bulk_n"]:,} deals lost on 13 May, 83% reason Unknown, no activity found. All flagged and excluded from rates.</li>
+<li>Bulk close-outs: any day with 50 or more deals closed lost and 75% or more reason Unknown. Three such days (3 March, 12 and 13 May), {sc["bulk_n"]:,} deals, all flagged and excluded from rates.</li>
 <li>Win rate: won / (won + lost) by month closed. Weighted pipeline: value times stage probability.</li>
 <li>AE attainment: ENT $125k, MM and SMB $100k, full monthly target, AE roles only.</li>
 <li>Known gaps: 1,172 rows with no amount, 93% of rows with no product name, 22% with no stage entered date (nearly all closed deals), created dates are migration dates.</li>

@@ -42,14 +42,14 @@ s.addShape(pres.ShapeType.ellipse, { x: 0.7, y: 1.3, w: 0.5, h: 0.5, fill: { col
 
 // 2 Headline
 s = pres.addSlide({ masterName: "CONTENT", sectionTitle: "Summary" });
-s.addText("May in one line: fewer, bigger deals, and a win rate a third of January\u2019s", { placeholder: "title" });
+s.addText("May in one line: fewer, bigger deals, and a win rate half of January\u2019s", { placeholder: "title" });
 stat(s, 0.5, 1.4, 2.95, "Won in May", usd(sc.won_v), `${sc.won_n} deals, ${pct(g.change)} vs April`, H.dk1);
 stat(s, 3.6, 1.4, 2.95, "Win rate", Math.round(sc.win_rate * 100) + "%", `${Math.round(t[7].win_rate * 100)}% in January`, H.accent3);
 stat(s, 6.7, 1.4, 2.95, "Average won deal", usd(sc.avg_won), `${usd(sc.prev_won_v / sc.prev_won_n)} in April`, H.accent2);
 stat(s, 9.8, 1.4, 2.95, "June coverage", g.cov_w.toFixed(1) + "x weighted", `${usd(g.next_w)} against ${usd(g.need_next)} needed`, H.accent2);
 bullets(s, [
   `Growth: May won ${usd(sc.won_v)}, down ${Math.round(-g.change * 100)}% on April. The 20% growth target was ${usd(g.target_this)}. Missed.`,
-  `Conversion: the win rate has fallen from ${Math.round(t[7].win_rate * 100)}% in January to ${Math.round(sc.win_rate * 100)}% in May, in every segment. Real lost deals, not the data clean-up.`,
+  `Conversion: the win rate fell from ${Math.round(t[7].win_rate * 100)}% in January to ${Math.round(t[10].win_rate * 100)}% in April, in every segment, and recovered only to ${Math.round(sc.win_rate * 100)}% in May. Real lost deals, not the data clean-up.`,
   `Mix: deals are bigger. Mid-market and enterprise grew, SMB fell ${Math.round(-M.segment.find(x => x.key == "SMB").change * 100)}% with a ${Math.round(M.segment.find(x => x.key == "SMB").win_rate * 100)}% win rate.`,
   `June: ${usd(g.next_w)} of weighted pipeline closes in June against ${usd(g.need_next)} needed for 20% growth. Coverage is fine. Conversion is the risk.`,
 ], 0.5, 3.1, 12.3, 3.1, 15);
@@ -60,7 +60,7 @@ s = pres.addSlide({ masterName: "CONTENT", sectionTitle: "Summary" });
 s.addText("Before the numbers: three things in the export that change the story", { placeholder: "title" });
 const fixes = [
   ["One row per product, not per deal", `${M.meta.rows.toLocaleString()} rows are ${M.meta.deals.toLocaleString()} deals. A deal with four products appears four times with the full amount on each row.`, `Counting rows gives May won of $3.25M. Counting deals gives ${usd(sc.won_v)}. The first analysis said growth was up 29%. It is down ${Math.round(-g.change * 100)}%.`],
-  ["A bulk close-out on 13 May", `${M.bulk_detail.n.toLocaleString()} deals were closed lost on one day. 83% carry reason Unknown and the note "no email or call activity found". ${M.bulk_detail.smb.toLocaleString()} are SMB.`, `This is pipeline hygiene, not May performance. Kept, flagged, and shown separately. Without it May still has ${sc.lost_n} real losses.`],
+  ["Three bulk close-out days", `${M.bulk_detail.n.toLocaleString()} deals were closed lost on three days (3 March, 12 and 13 May), ${M.bulk_detail.may_n.toLocaleString()} of them in May. Most carry reason Unknown and the note "no email or call activity found". ${M.bulk_detail.smb.toLocaleString()} are SMB.`, `This is pipeline hygiene, not May performance. Kept, flagged, and shown separately. Without it May still has ${sc.lost_n} real losses.`],
   ["Created dates are a migration date", "Every deal, including ones closed in 2025, has a created date in April or May 2026. The pipeline was loaded into Salesforce then.", "Deal age uses stage entered dates instead. 1,134 of 1,137 open deals have one, so days in stage is reliable for the open pipeline."],
 ];
 fixes.forEach((f, i) => { const y = 1.4 + i * 1.65; card(s, 0.5, y, 12.3, 1.5);
@@ -73,12 +73,12 @@ note(s, "Full rule list with counts: removed_and_why.csv in the repo.", 6.45, 0.
 // 4 Trend
 pres.addSection({ title: "Performance" });
 s = pres.addSlide({ masterName: "CONTENT", sectionTitle: "Performance" });
-s.addText("Won value has plateaued since February while real losses have kept rising", { placeholder: "title" });
+s.addText("Won value has plateaued since February while real losses rose through April", { placeholder: "title" });
 const labels = t.map(x => { const [y, m] = x.month.split("-"); return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][+m - 1] + " " + y.slice(2); });
 s.addChart(pres.ChartType.bar, [
   { name: "Won", labels, values: t.map(x => Math.round(x.won_v / 1000)) },
   { name: "Lost", labels, values: t.map(x => Math.round(x.lost_v / 1000)) },
-  { name: "Bulk close-out (13 May)", labels, values: t.map(x => Math.round(x.bulk_v / 1000)) },
+  { name: "Bulk close-outs", labels, values: t.map(x => Math.round(x.bulk_v / 1000)) },
 ], { ...chartBase, x: 0.5, y: 1.3, w: 8.4, h: 4.9, barDir: "col", barGrouping: "clustered", barGapWidthPct: 60, chartColors: [H.accent2, H.accent3, H.accent6], showLegend: true, legendPos: "t",
   valAxisTitle: "USD thousands", showValAxisTitle: true, valAxisTitleColor: H.dk2, valAxisTitleFontSize: 10, valAxisTitleFontFace: "+mn-lt", showValue: false });
 card(s, 9.2, 1.3, 3.6, 4.9);
@@ -87,13 +87,13 @@ bullets(s, [
   `Won value: ${usd(t[8].won_v)} in Feb, ${usd(t[9].won_v)}, ${usd(t[10].won_v)}, ${usd(sc.won_v)} in May. Flat to down.`,
   `Won count: ${t[8].won_n} in Feb to ${sc.won_n} in May. Fewer deals, bigger average.`,
   `Real losses: ${t[8].lost_n} in Feb to ${sc.lost_n} in May, worth ${usd(sc.lost_v)}.`,
-  `The grey bar is the 13 May clean-up, ${sc.bulk_n.toLocaleString()} deals. Excluded from every rate on the following pages.`,
+  `The grey bars are clean-up days: any day with 50 or more deals closed lost and 75% or more marked Unknown. ${sc.bulk_n.toLocaleString()} deals across three days, excluded from every rate on the following pages.`,
 ], 9.4, 1.85, 3.2, 4.2, 11);
 note(s, "Caveat: losses before the April migration may be under-recorded, which would flatter early-2026 win rates. The direction since February is not in doubt.");
 
 // 5 Win rate by segment
 s = pres.addSlide({ masterName: "CONTENT", sectionTitle: "Performance" });
-s.addText("The win rate has fallen in every segment since January, with no recovery in May", { placeholder: "title" });
+s.addText("The win rate fell in every segment to April, with a partial recovery in May", { placeholder: "title" });
 const wr = M.seg_wr;
 s.addChart(pres.ChartType.line, Object.entries(wr).map(([k, v]) => ({ name: k, labels: ["Jan", "Feb", "Mar", "Apr", "May"], values: v.map(x => Math.round(x * 100)) })),
   { ...chartBase, x: 0.5, y: 1.3, w: 8.4, h: 4.9, chartColors: [H.accent4, H.accent1, H.accent3], lineSize: 2.5, lineDataSymbol: "circle", lineDataSymbolSize: 7, showLegend: true, legendPos: "t", valAxisMaxVal: 80, valAxisMinVal: 0,
@@ -223,7 +223,7 @@ bullets(s, [
   `Source: Salesforce export, ${M.meta.rows.toLocaleString()} rows, ${M.meta.deals.toLocaleString()} deals, Jan 2025 to May 2026. Reporting period May 2026, compared with April.`,
   "Deal value: sum of Total Price (converted) across a deal's product lines, in USD. Equals Amount for USD deals and converts the 46 EUR and GBP deals.",
   "Won and lost month: Stage 7W or 7L entered date, Close Date where missing (4 deals).",
-  `Bulk close-out: ${sc.bulk_n.toLocaleString()} deals lost on 13 May, 83% with reason Unknown and no activity found. All flagged and excluded from rates.`,
+  `Bulk close-outs: any day with 50 or more deals closed lost and 75% or more reason Unknown. Three such days (3 March, 12 and 13 May), ${sc.bulk_n.toLocaleString()} deals, all flagged and excluded from rates.`,
   "Win rate: won / (won + lost) by month closed. Weighted pipeline: value times stage probability.",
   "AE attainment: ENT $125k, MM and SMB $100k, full monthly target, AE roles only.",
   "Known gaps: 1,172 rows with no amount, 93% of rows with no product name, 22% with no stage entered date (nearly all closed deals), created dates are migration dates.",
